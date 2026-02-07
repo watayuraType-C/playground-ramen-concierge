@@ -7,6 +7,7 @@ servers:
     description: Local development server
 
 paths:
+  # --- ラーメンメモ解析 ---
   /api/parse-ramen:
     post:
       summary: AIによるラーメンメモの解析
@@ -25,37 +26,44 @@ paths:
               schema:
                 $ref: '#/components/schemas/RamenData'
         '400':
-          description: リクエスト不備（入力テキストが空、または不正）
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/BadRequest'
         '422':
-          description: LLM解析失敗（データが仕様を満たさない）
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/UnprocessableEntity'
         '503':
-          description: 外部サービスエラー（Gemini APIへの接続失敗）
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/responses/ServiceUnavailable'
         '500':
-          description: サーバー内部エラー
+          $ref: '#/components/responses/InternalServerError'
+
+  # --- ラーメン屋情報登録 ---
+  /api/register-ramen:
+    post:
+      summary: ラーメン屋情報をDBに新規登録する
+      operationId: registerRamen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RamenData'
+      responses:
+        '201':
+          description: 登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/RegisterRamenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
-    # --- リクエスト用 ---
     ParseRamenRequest:
       type: object
-      required:
-        - text
+      required: [text]
       properties:
         text:
           type: string
@@ -63,23 +71,16 @@ components:
           maxLength: 1000
           example: "韮崎のラーメン屋である韮崎家、醤油で星4"
 
-    # --- 成功レスポンス用 ---
     RamenData:
       type: object
-      required:
-        - name
-        - categories
-        - rating
-        - location
-        - review
+      required: [name, categories, rating, location, review]
       properties:
         name:
           type: string
           example: "韮崎家"
         categories:
           type: array
-          items:
-            type: string
+          items: { type: string }
           default: []
           example: ["家系", "醤油"]
         rating:
@@ -100,16 +101,69 @@ components:
           default: null
           example: "こってりしてて美味しかった。"
 
-    # --- エラーレスポンス共通用 ---
+    # CustomErrorクラスの構造に合わせたエラーレスポンス
     ErrorResponse:
       type: object
-      required:
-        - error
-        - code
+      required: [message, code]
       properties:
-        error:
+        message:
           type: string
           example: "エラーメッセージがここに入ります"
         code:
           type: string
-          example: "ERROR_CODE_HERE"
+          example: "ERROR_CODE_NAME"
+
+    RegisterRamenResponse:
+      type: object
+      required: [id, message]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Supabaseから発行されたID
+        message:
+          type: string
+          example: "登録が完了しました"
+
+  responses:
+    BadRequest:
+      description: リクエストの形式が正しくありません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_json:
+              value: { message: "JSONの形式が正しくありません", code: "INVALID_JSON" }
+            validation_error:
+              value: { message: "入力内容が不足しています", code: "BAD_REQUEST" }
+
+    UnprocessableEntity:
+      description: AIの解析に失敗しました
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            value: { message: "AIの回答を解析できませんでした", code: "PARSE_FAILURE" }
+
+    ServiceUnavailable:
+      description: 外部サービス（Gemini/Supabase）に接続できません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            gemini_error:
+              value: { message: "AIとの通信に失敗しました", code: "AI_SERVICE_UNAVAILABLE" }
+            supabase_error:
+              value: { message: "DBへの接続に失敗しました", code: "DATABASE_CONNECTION_ERROR" }
+
+    InternalServerError:
+      description: 予期せぬエラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            value: { message: "予期せぬエラーが発生しました", code: "INTERNAL_SERVER_ERROR" }

@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/register-ramen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ラーメン屋情報をDBに新規登録する */
+        post: operations["registerRamen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -58,12 +75,74 @@ export interface components {
         };
         ErrorResponse: {
             /** @example エラーメッセージがここに入ります */
-            error: string;
-            /** @example ERROR_CODE_HERE */
+            message: string;
+            /** @example ERROR_CODE_NAME */
             code: string;
         };
+        RegisterRamenResponse: {
+            /**
+             * Format: uuid
+             * @description Supabaseから発行されたID
+             */
+            id: string;
+            /** @example 登録が完了しました */
+            message: string;
+        };
     };
-    responses: never;
+    responses: {
+        /** @description リクエストの形式が正しくありません */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description AIの解析に失敗しました */
+        UnprocessableEntity: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "value": {
+                 *         "message": "AIの回答を解析できませんでした",
+                 *         "code": "PARSE_FAILURE"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description 外部サービス（Gemini/Supabase）に接続できません */
+        ServiceUnavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description 予期せぬエラー */
+        InternalServerError: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "value": {
+                 *         "message": "予期せぬエラーが発生しました",
+                 *         "code": "INTERNAL_SERVER_ERROR"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -93,42 +172,37 @@ export interface operations {
                     "application/json": components["schemas"]["RamenData"];
                 };
             };
-            /** @description リクエスト不備（入力テキストが空、または不正） */
-            400: {
+            400: components["responses"]["BadRequest"];
+            422: components["responses"]["UnprocessableEntity"];
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    registerRamen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RamenData"];
+            };
+        };
+        responses: {
+            /** @description 登録成功 */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
+                    "application/json": components["schemas"]["RegisterRamenResponse"];
                 };
             };
-            /** @description LLM解析失敗（データが仕様を満たさない） */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description サーバー内部エラー */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 外部サービスエラー（Gemini APIへの接続失敗） */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
+            400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
         };
     };
 }

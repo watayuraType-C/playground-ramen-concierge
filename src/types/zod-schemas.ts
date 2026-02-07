@@ -14,13 +14,17 @@ const RamenData = z
   })
   .passthrough();
 const ErrorResponse = z
-  .object({ error: z.string(), code: z.string() })
+  .object({ message: z.string(), code: z.string() })
+  .passthrough();
+const RegisterRamenResponse = z
+  .object({ id: z.string().uuid(), message: z.string() })
   .passthrough();
 
 export const schemas = {
   ParseRamenRequest,
   RamenData,
   ErrorResponse,
+  RegisterRamenResponse,
 };
 
 const endpoints = makeApi([
@@ -40,22 +44,53 @@ const endpoints = makeApi([
     errors: [
       {
         status: 400,
-        description: `リクエスト不備（入力テキストが空、または不正）`,
+        description: `リクエストの形式が正しくありません`,
         schema: ErrorResponse,
       },
       {
         status: 422,
-        description: `LLM解析失敗（データが仕様を満たさない）`,
+        description: `AIの解析に失敗しました`,
         schema: ErrorResponse,
       },
       {
         status: 500,
-        description: `サーバー内部エラー`,
+        description: `予期せぬエラー`,
         schema: ErrorResponse,
       },
       {
         status: 503,
-        description: `外部サービスエラー（Gemini APIへの接続失敗）`,
+        description: `外部サービス（Gemini/Supabase）に接続できません`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/register-ramen",
+    alias: "registerRamen",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: RamenData,
+      },
+    ],
+    response: RegisterRamenResponse,
+    errors: [
+      {
+        status: 400,
+        description: `リクエストの形式が正しくありません`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 500,
+        description: `予期せぬエラー`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 503,
+        description: `外部サービス（Gemini/Supabase）に接続できません`,
         schema: ErrorResponse,
       },
     ],
