@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## フロントエンド用の型定義を更新
+```
+npx openapi-typescript schema/api.yaml -o src/types/api.ts
+```
+
+# バックエンド用のZodスキーマを更新
+```
+npx openapi-zod-client schema/api.yaml -o src/types/zod-schemas.ts
+```
+
+## コーディング規約
+- **原則 1ファイル 1関数**: ロジックの最小単位で分割し、テストしやすくする。
+- **ファイル命名**: 関数名と同一とし、`snake_case` を採用する。
+- **関数命名**: ファイル名と同一とし、`snake_case` を採用する。
+- **変数命名**: `snake_case` を採用する。
+- **コロケーション**: 特定のエンドポイントでしか使わない関数は、その `route.ts` と同じ階層に置く。

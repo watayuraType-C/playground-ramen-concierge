@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: Ramen Concierge API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /api/parse-ramen:
+    post:
+      summary: AIによるラーメンメモの解析
+      operationId: parseRamen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParseRamenRequest'
+      responses:
+        '200':
+          description: 解析成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RamenData'
+        '400':
+          description: リクエスト不備（入力テキストが空、または不正）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: LLM解析失敗（データが仕様を満たさない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: 外部サービスエラー（Gemini APIへの接続失敗）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: サーバー内部エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    # --- リクエスト用 ---
+    ParseRamenRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "韮崎のラーメン屋である韮崎家、醤油で星4"
+
+    # --- 成功レスポンス用 ---
+    RamenData:
+      type: object
+      required:
+        - name
+        - categories
+        - rating
+        - location
+        - review
+      properties:
+        name:
+          type: string
+          example: "韮崎家"
+        categories:
+          type: array
+          items:
+            type: string
+          default: []
+          example: ["家系", "醤油"]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          default: null
+          example: 4
+        location:
+          type: string
+          nullable: true
+          default: null
+          example: "山梨県韮崎市"
+        review:
+          type: string
+          nullable: true
+          default: null
+          example: "こってりしてて美味しかった。"
+
+    # --- エラーレスポンス共通用 ---
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          example: "エラーメッセージがここに入ります"
+        code:
+          type: string
+          example: "ERROR_CODE_HERE"
