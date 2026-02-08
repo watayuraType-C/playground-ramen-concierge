@@ -44,7 +44,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RamenData'
+              $ref: '#/components/schemas/RegisterRamenData'
       responses:
         '201':
           description: 登録成功
@@ -100,6 +100,35 @@ components:
           nullable: true
           default: null
           example: "こってりしてて美味しかった。"
+    RegisterRamenData:
+      type: object
+      additionalProperties: false
+      required: [name, categories, rating, location, review]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: "光家"
+        categories:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 1
+          example: ["豚骨", "醤油", "家系"]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 4
+        location:
+          type: string
+          minLength: 1
+          example: "横浜市"
+        review:
+          type: string
+          minLength: 1
+          example: "キャベツラーメンが最高"
 
     # CustomErrorクラスの構造に合わせたエラーレスポンス
     ErrorResponse:

@@ -1,5 +1,5 @@
 // src/app/register/RamenEditForm.tsx
-import { RamenData } from "./types";
+import { RamenData, RegisterRamenData } from "./types";
 
 type Props = {
   initial_data: RamenData;
@@ -18,13 +18,28 @@ export function RamenEditForm({ initial_data, on_save, on_cancel }: Props) {
 
   const handle_submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const category_list = categories_text.split(",").map(c => c.trim()).filter(c => c !== "");
+
+    // --- 厳格なチェック ---
+    if (
+      name.trim() === "" ||
+      location.trim() === "" ||
+      review.trim() === "" ||
+      category_list.length === 0 ||
+      rating === null
+    ) {
+      alert("すべての項目を埋めてください。空の項目があると登録できません。");
+      return; 
+    }
+
+    // ここで渡すのは「完成品」としての RegisterRamenData
     on_save({
-      name,
-      location: location || null,
-      categories: categories_text.split(",").map(c => c.trim()).filter(c => c !== ""),
-      rating,
-      review: review || null,
-    });
+      name: name.trim(),
+      location: location.trim(),
+      categories: category_list,
+      rating: rating,
+      review: review.trim(),
+    } as RegisterRamenData);
   };
 
   return (

@@ -16,6 +16,13 @@ const RamenData = z
 const ErrorResponse = z
   .object({ message: z.string(), code: z.string() })
   .passthrough();
+const RegisterRamenData = z.object({
+  name: z.string().min(1),
+  categories: z.array(z.string().min(1)).min(1),
+  rating: z.number().int().gte(1).lte(5),
+  location: z.string().min(1),
+  review: z.string().min(1),
+});
 const RegisterRamenResponse = z
   .object({ id: z.string().uuid(), message: z.string() })
   .passthrough();
@@ -24,6 +31,7 @@ export const schemas = {
   ParseRamenRequest,
   RamenData,
   ErrorResponse,
+  RegisterRamenData,
   RegisterRamenResponse,
 };
 
@@ -73,7 +81,7 @@ const endpoints = makeApi([
       {
         name: "body",
         type: "Body",
-        schema: RamenData,
+        schema: RegisterRamenData,
       },
     ],
     response: RegisterRamenResponse,

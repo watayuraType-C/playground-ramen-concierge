@@ -73,6 +73,24 @@ export interface components {
              */
             review: string | null;
         };
+        RegisterRamenData: {
+            /** @example 光家 */
+            name: string;
+            /**
+             * @example [
+             *       "豚骨",
+             *       "醤油",
+             *       "家系"
+             *     ]
+             */
+            categories: string[];
+            /** @example 4 */
+            rating: number;
+            /** @example 横浜市 */
+            location: string;
+            /** @example キャベツラーメンが最高 */
+            review: string;
+        };
         ErrorResponse: {
             /** @example エラーメッセージがここに入ります */
             message: string;
@@ -187,7 +205,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RamenData"];
+                "application/json": components["schemas"]["RegisterRamenData"];
             };
         };
         responses: {
