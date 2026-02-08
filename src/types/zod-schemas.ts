@@ -38,6 +38,17 @@ const SearchRamenResult = z.object({
   similarity: z.number().gte(0).lte(1),
   ai_comment: z.string().min(1),
 });
+const ManageRamenData = RegisterRamenData.and(
+  z
+    .object({
+      id: z.string().uuid(),
+      created_at: z.string().datetime({ offset: true }),
+    })
+    .passthrough()
+);
+const UpdateRamenRequest = RegisterRamenData.and(
+  z.object({ id: z.string().uuid() }).passthrough()
+);
 
 export const schemas = {
   ParseRamenRequest,
@@ -47,9 +58,79 @@ export const schemas = {
   RegisterRamenResponse,
   SearchRamenRequest,
   SearchRamenResult,
+  ManageRamenData,
+  UpdateRamenRequest,
 };
 
 const endpoints = makeApi([
+  {
+    method: "get",
+    path: "/api/manage-ramen",
+    alias: "getAllRamenStores",
+    description: `管理画面用に全件取得します。データ量削減のためembeddingは返しません。`,
+    requestFormat: "json",
+    response: z.array(ManageRamenData),
+    errors: [
+      {
+        status: 500,
+        description: `予期せぬエラー`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "delete",
+    path: "/api/manage-ramen",
+    alias: "deleteRamenStore",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "id",
+        type: "Query",
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.object({ message: z.string() }).partial().passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `リクエストの形式が正しくありません`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 500,
+        description: `予期せぬエラー`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "put",
+    path: "/api/manage-ramen",
+    alias: "updateRamenStore",
+    description: `内容が変更された場合、AIによるEmbeddingの再計算も自動で行います。`,
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: UpdateRamenRequest,
+      },
+    ],
+    response: z.object({ message: z.string() }).partial().passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `リクエストの形式が正しくありません`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 500,
+        description: `予期せぬエラー`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
   {
     method: "post",
     path: "/api/parse-ramen",

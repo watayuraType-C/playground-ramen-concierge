@@ -96,6 +96,74 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '500':
           $ref: '#/components/responses/InternalServerError'
+
+  # --- 管理画面用ラーメン屋管理 ---
+  /api/manage-ramen:
+    # 全ラーメン屋リストの取得
+    get:
+      summary: 全ラーメン屋リストの取得
+      description: 管理画面用に全件取得します。データ量削減のためembeddingは返しません。
+      operationId: getAllRamenStores
+      responses:
+        '200':
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ManageRamenData'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: ラーメン屋の削除
+      operationId: deleteRamenStore
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: 削除する対象のUUID
+      responses:
+        '200':
+          description: 削除成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "削除しました" }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: ラーメン屋情報の更新 (Embedding再計算含む)
+      description: 内容が変更された場合、AIによるEmbeddingの再計算も自動で行います。
+      operationId: updateRamenStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRamenRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: "更新しました" }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
           
 
 
@@ -216,6 +284,29 @@ components:
           type: string
           minLength: 1
           example: "あなたの好みに非常にマッチしています！ぜひ訪れてみて"
+    ManageRamenData:
+      allOf:
+        - $ref: '#/components/schemas/RegisterRamenData'
+        - type: object
+          required: [id, created_at]
+          properties:
+            id:
+              type: string
+              format: uuid
+            created_at:
+              type: string
+              format: date-time
+
+    # 更新リクエスト用（ID必須、他はRegisterと同じ）
+    UpdateRamenRequest:
+      allOf:
+        - $ref: '#/components/schemas/RegisterRamenData'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
 
     # CustomErrorクラスの構造に合わせたエラーレスポンス
     ErrorResponse:
@@ -292,3 +383,4 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             value: { message: "指定されたリソースが見つかりません", code: "NOT_FOUND" }
+          
