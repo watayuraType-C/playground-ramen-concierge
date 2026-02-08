@@ -58,6 +58,46 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  # --- ラーメン屋検索 ---
+  /api/search-ramen:
+    post:
+      summary: ラーメン検索 (RAG検索 + Web検索)
+      operationId: searchRamen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchRamenRequest'
+      responses:
+        '200':
+          description: 検索成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [db_match, web_match]
+                properties:
+                  db_match:
+                    type: array
+                    description: 自分のログ（DB）からの検索結果
+                    items:
+                      $ref: '#/components/schemas/SearchRamenResult'
+                  web_match:
+                    type: array
+                    description: Web知識からの検索結果
+                    items:
+                      $ref: '#/components/schemas/SearchRamenResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+
 
 components:
   schemas:
@@ -70,6 +110,15 @@ components:
           minLength: 1
           maxLength: 1000
           example: "韮崎のラーメン屋である韮崎家、醤油で星4"
+    SearchRamenRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "とんこつ醤油ラーメンで最高においしいのが食べたい。"
 
     RamenData:
       type: object
@@ -129,6 +178,44 @@ components:
           type: string
           minLength: 1
           example: "キャベツラーメンが最高"
+    SearchRamenResult:
+      type: object
+      additionalProperties: false
+      required: [name, categories, rating, location, review, similarity, ai_comment]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: "ラーメン次郎横浜関内店"
+        categories:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 1
+          example: ["二郎系", "醤油"]
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        location:
+          type: string
+          minLength: 1
+          example: "横浜市"
+        review:
+          type: string
+          minLength: 1
+          example: "微乳化スープが麺に絡み合い、満足度が高いです。"
+        similarity:
+          type: number
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.8
+        ai_comment:
+          type: string
+          minLength: 1
+          example: "あなたの好みに非常にマッチしています！ぜひ訪れてみて"
 
     # CustomErrorクラスの構造に合わせたエラーレスポンス
     ErrorResponse:
@@ -196,3 +283,12 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             value: { message: "予期せぬエラーが発生しました", code: "INTERNAL_SERVER_ERROR" }
+
+    NotFound:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            value: { message: "指定されたリソースが見つかりません", code: "NOT_FOUND" }

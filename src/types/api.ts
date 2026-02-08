@@ -38,12 +38,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search-ramen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ラーメン検索 (RAG検索 + Web検索) */
+        post: operations["searchRamen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         ParseRamenRequest: {
             /** @example 韮崎のラーメン屋である韮崎家、醤油で星4 */
+            text: string;
+        };
+        SearchRamenRequest: {
+            /** @example とんこつ醤油ラーメンで最高においしいのが食べたい。 */
             text: string;
         };
         RamenData: {
@@ -90,6 +111,27 @@ export interface components {
             location: string;
             /** @example キャベツラーメンが最高 */
             review: string;
+        };
+        SearchRamenResult: {
+            /** @example ラーメン次郎横浜関内店 */
+            name: string;
+            /**
+             * @example [
+             *       "二郎系",
+             *       "醤油"
+             *     ]
+             */
+            categories: string[];
+            /** @example 5 */
+            rating: number;
+            /** @example 横浜市 */
+            location: string;
+            /** @example 微乳化スープが麺に絡み合い、満足度が高いです。 */
+            review: string;
+            /** @example 0.8 */
+            similarity: number;
+            /** @example あなたの好みに非常にマッチしています！ぜひ訪れてみて */
+            ai_comment: string;
         };
         ErrorResponse: {
             /** @example エラーメッセージがここに入ります */
@@ -160,6 +202,23 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description リソースが見つかりません */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "value": {
+                 *         "message": "指定されたリソースが見つかりません",
+                 *         "code": "NOT_FOUND"
+                 *       }
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
     };
     parameters: never;
     requestBodies: never;
@@ -219,6 +278,39 @@ export interface operations {
                 };
             };
             400: components["responses"]["BadRequest"];
+            500: components["responses"]["InternalServerError"];
+            503: components["responses"]["ServiceUnavailable"];
+        };
+    };
+    searchRamen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRamenRequest"];
+            };
+        };
+        responses: {
+            /** @description 検索成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 自分のログ（DB）からの検索結果 */
+                        db_match: components["schemas"]["SearchRamenResult"][];
+                        /** @description Web知識からの検索結果 */
+                        web_match: components["schemas"]["SearchRamenResult"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            404: components["responses"]["NotFound"];
             500: components["responses"]["InternalServerError"];
             503: components["responses"]["ServiceUnavailable"];
         };

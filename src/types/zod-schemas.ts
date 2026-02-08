@@ -26,6 +26,18 @@ const RegisterRamenData = z.object({
 const RegisterRamenResponse = z
   .object({ id: z.string().uuid(), message: z.string() })
   .passthrough();
+const SearchRamenRequest = z
+  .object({ text: z.string().min(1).max(1000) })
+  .passthrough();
+const SearchRamenResult = z.object({
+  name: z.string().min(1),
+  categories: z.array(z.string().min(1)).min(1),
+  rating: z.number().int().gte(1).lte(5),
+  location: z.string().min(1),
+  review: z.string().min(1),
+  similarity: z.number().gte(0).lte(1),
+  ai_comment: z.string().min(1),
+});
 
 export const schemas = {
   ParseRamenRequest,
@@ -33,6 +45,8 @@ export const schemas = {
   ErrorResponse,
   RegisterRamenData,
   RegisterRamenResponse,
+  SearchRamenRequest,
+  SearchRamenResult,
 };
 
 const endpoints = makeApi([
@@ -89,6 +103,47 @@ const endpoints = makeApi([
       {
         status: 400,
         description: `リクエストの形式が正しくありません`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 500,
+        description: `予期せぬエラー`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 503,
+        description: `外部サービス（Gemini/Supabase）に接続できません`,
+        schema: ErrorResponse,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/search-ramen",
+    alias: "searchRamen",
+    requestFormat: "json",
+    parameters: [
+      {
+        name: "body",
+        type: "Body",
+        schema: z.object({ text: z.string().min(1).max(1000) }).passthrough(),
+      },
+    ],
+    response: z
+      .object({
+        db_match: z.array(SearchRamenResult),
+        web_match: z.array(SearchRamenResult),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `リクエストの形式が正しくありません`,
+        schema: ErrorResponse,
+      },
+      {
+        status: 404,
+        description: `リソースが見つかりません`,
         schema: ErrorResponse,
       },
       {
