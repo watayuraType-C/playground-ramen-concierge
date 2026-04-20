@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import Link from "next/link";
-import { Search, Pen, Send } from "lucide-react";
+import { Send } from "lucide-react";
 
 // 型定義
 type SafeSearchRamenResult = {
@@ -36,22 +35,25 @@ export default function SearchPage() {
     {
       id: "initial-msg",
       role: "ai",
-      text: "どんなラーメン屋にいきたいですか？",
+      text: "どんなラーメンが食べたい気分？🥢\nこってり系、あっさり系、場所などの希望を自由に教えてね！",
       isInitial: true,
     },
   ]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // キャラクター画像の状態管理
-  const characterImage = isLoading
-    ? "/images/thinking.png"
+  // 背景画像の設定
+  const bg_image_class = isLoading
+    ? "bg-[url('/images/bg-thinking.png')]"
     : messages.some((m) => m.results)
-    ? "/images/suggesting.png"
-    : "/images/waiting.png";
+    ? "bg-[url('/images/bg-suggesting.png')]"
+    : "bg-[url('/images/bg-waiting.png')]";
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, characterImage]);
+    // 最初のメッセージしかない（ページロード時）はスクロールしない
+    if (messages.length > 1) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, bg_image_class]);
 
   const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -111,150 +113,156 @@ export default function SearchPage() {
   };
 
   const renderRamenCard = (result: SafeSearchRamenResult, title: string) => (
-    <div className="h-full bg-slate-700/95 border border-orange-400 rounded-xl p-3 shadow-[0_0_12px_rgba(249,115,22,0.6)] flex flex-col gap-2">
-      <div className="flex items-center justify-between border-b border-orange-400/50 pb-1">
-        <h4 className="text-orange-300 font-bold text-xs md:text-sm">{title}</h4>
+    <div className="h-full bg-white/50 border border-orange-200 rounded-xl p-4 shadow-sm flex flex-col gap-2 transition-all hover:bg-white/80 hover:shadow-md">
+      <div className="flex items-center justify-between border-b border-orange-200 pb-2">
+        <h4 className="text-orange-600 font-bold text-xs md:text-sm">{title}</h4>
         {result.similarity > 0 && (
-          <span className="text-[10px] md:text-xs bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded font-bold">
+          <span className="text-[10px] md:text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold">
             類似度: {Math.round(result.similarity * 100)}%
           </span>
         )}
       </div>
-      <h3 className="text-lg md:text-xl font-bold text-slate-50">{result.name}</h3>
+      <h3 className="text-lg md:text-xl font-black text-slate-800">{result.name}</h3>
       <div className="flex flex-wrap gap-1.5">
         {result.categories.map((cat, i) => (
-          <span key={i} className="text-[10px] md:text-xs bg-slate-600 text-slate-200 px-1.5 py-0.5 rounded leading-none">
+          <span key={i} className="text-[10px] md:text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-semibold leading-none">
             {cat}
           </span>
         ))}
       </div>
-      <p className="text-sm text-yellow-500 font-bold leading-none">⭐ {result.rating} <span className="text-xs text-slate-300">/ 5.0</span></p>
-      <p className="text-xs md:text-sm text-slate-200 line-clamp-2 leading-tight">📍 {result.location}</p>
+      <p className="text-sm text-yellow-500 font-black leading-none mt-1">⭐ {result.rating} <span className="text-xs text-slate-400 font-normal">/ 5.0</span></p>
+      <p className="text-xs md:text-sm text-slate-600 line-clamp-2 leading-tight">📍 {result.location}</p>
       
-      <div className="bg-slate-800/80 p-2 rounded border border-slate-600 flex-grow mt-1">
-        <p className="text-[10px] md:text-xs text-orange-300 font-bold mb-0.5">💬 らーなびのヒトコト</p>
-        <p className="text-xs md:text-sm text-slate-100 leading-snug">{result.ai_comment}</p>
+      <div className="bg-orange-50/80 p-3 rounded-lg border border-orange-100 flex-grow mt-2">
+        <p className="text-[10px] md:text-xs text-orange-500 font-bold mb-1">💬 らーなびのヒトコト</p>
+        <p className="text-xs md:text-sm text-slate-700 leading-snug">{result.ai_comment}</p>
       </div>
     </div>
   );
 
   return (
-    <div className="flex flex-col w-full h-full relative flex-grow overflow-x-hidden">
+    <div className="flex flex-col w-full min-h-screen relative overflow-x-hidden">
       
-      {/* 1. キャラクターを絶対配置で極大表示し、背面に置く */}
-      <div className="absolute top-0 inset-x-0 w-full flex justify-center z-0 pointer-events-none">
-        <img
-          src={characterImage}
-          alt="らーなびちゃん"
-          className="w-[180%] max-w-[700px] md:max-w-[1000px] h-auto drop-shadow-[0_0_25px_rgba(249,115,22,0.5)] transition-opacity duration-300 translate-y-2 md:translate-y-8"
-        />
+      {/* 1. 背景画像（素の画像、ぼかし無し） */}
+      <div className={`fixed inset-0 z-0 bg-cover bg-center bg-fixed transition-all duration-700 ease-in-out ${bg_image_class}`}>
       </div>
 
-      {/* 2. チャットエリア (前面レイヤー) */}
-      <div className="relative z-10 flex-grow flex flex-col px-2 md:px-6 w-full max-w-5xl mx-auto">
-        
-        {/* キャラクターの顔部分を見せるためのスペーサー */}
-        <div className="w-full shrink-0 min-h-[220px] md:min-h-[350px]"></div>
+      {/* グラデーション（上下の可読性用） */}
+      <div className="fixed inset-x-0 top-0 h-24 bg-gradient-to-b from-black/40 to-transparent pointer-events-none z-0"></div>
+      <div className="fixed inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent pointer-events-none z-0"></div>
 
-        <div className="flex flex-col gap-2 md:gap-3 pb-2 w-full">
-          {messages.map((msg) => (
+      {/* ヘッダータイトル */}
+      <div className="relative z-10 w-full flex justify-center pt-8 mb-6 pointer-events-none shrink-0">
+          <div className="bg-white/90 backdrop-blur-sm border-2 border-orange-300 px-8 py-3 rounded-full shadow-[0_4px_15px_rgba(249,115,22,0.3)]">
+              <h1 className="text-xl md:text-2xl font-extrabold text-orange-600 tracking-wider">おすすめのお店を探す</h1>
+          </div>
+      </div>
+
+      {/* 2. チャット履歴エリア */}
+      <div className="relative z-10 flex-grow flex flex-col px-2 sm:px-4 md:px-6 w-full gap-8 overflow-y-auto pb-40">
+          {messages.map((msg, index) => (
             <div
               key={msg.id}
-              className={`flex w-full ${
-                msg.role === "user" ? "justify-end" : "justify-start"
-              }`}
+              className={`w-full flex ${
+                msg.role === "user" ? "justify-end pr-0 md:pr-4" : "justify-start pl-0 md:pl-4"
+              } animate-in fade-in slide-in-from-bottom-4 duration-500`}
             >
-              {msg.role === "ai" && (
-                <div className="shrink-0 w-9 h-9 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.7)] bg-slate-800 mr-2 mt-0.5">
-                  <img
-                    src="/images/icon.png"
-                    alt="らーなびちゃんアイコン"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-
-              <div
-                className={`max-w-[90%] md:max-w-[80%] relative rounded-xl py-2 px-3 md:py-3 md:px-5 text-sm md:text-base leading-snug shadow-[0_4px_15px_rgba(0,0,0,0.6)] backdrop-blur-md ${
-                  msg.role === "user"
-                    ? "bg-slate-600/95 text-white rounded-br-sm border border-slate-500" // ユーザー: やや明るいslate
-                    : "bg-slate-700/95 text-slate-50 rounded-bl-sm border border-orange-400/90" // AI: 明るめのslate
+              <div 
+                // キャラクターの顔（中央）を避けるため、最大幅をかなり絞り、ユーザー・AIで分ける
+                className={`flex items-end gap-3 w-full max-w-[95%] md:max-w-[60%] lg:max-w-[45%] xl:max-w-[40%] ${
+                  msg.role === "user" ? "flex-col items-end" : ""
                 }`}
               >
-                {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
-
-                {msg.isLoading && (
-                  <div className="flex items-center gap-1.5 text-orange-400 font-bold">
-                    <span>至高の一杯を探しています...</span>
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce"></div>
-                    </div>
+                
+                {/* AIアイコン (左側表示) */}
+                {msg.role === "ai" && (
+                  <div className="shrink-0 w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-4 border-orange-300 shadow-[0_4px_15px_rgba(249,115,22,0.4)] bg-slate-800 hidden sm:block">
+                    <img src="/images/icon.png" alt="アイコン" className="w-full h-full object-cover" />
                   </div>
                 )}
 
-                {msg.results && (
-                  <div className="flex flex-col gap-2 mt-1">
-                    <p className="font-bold text-orange-200">お待たせしました！こちらのラーメンはいかがですか？🍜✨</p>
-                    
-                    {/* 横長・横並びカードレイアウト (グリッド利用) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-1">
-                      {msg.results.db_match.map((match, i) => (
-                        <div key={`db-${i}`} className="h-full">
-                          {renderRamenCard(match, "✅ あなたの好みに近いお店（DBより）")}
-                        </div>
-                      ))}
+                <div
+                  className={`w-full rounded-3xl py-4 px-6 md:py-6 md:px-8 shadow-[0_8px_30px_rgba(0,0,0,0.15)] transition-all ${
+                    msg.role === "user"
+                      ? "bg-gradient-to-tl from-orange-50 to-white text-slate-800 rounded-br-sm border border-slate-200"
+                      : "bg-white/95 text-slate-800 rounded-bl-sm border-2 border-orange-300"
+                  }`}
+                >
+                  {/* スマホレイアウト用 AIアイコン(内側) */}
+                  {msg.role === "ai" && (
+                      <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden border-2 border-orange-300 shadow bg-slate-800 sm:hidden block mb-3 -ml-2 -mt-2">
+                        <img src="/images/icon.png" alt="アイコン" className="w-full h-full object-cover" />
+                      </div>
+                  )}
 
-                      {msg.results.web_match.map((match, i) => (
-                        <div key={`web-${i}`} className="h-full">
-                          {renderRamenCard(match, "🌐 ネットで見つけたおすすめのお店")}
-                        </div>
-                      ))}
+                  {msg.text && (
+                      <p className="whitespace-pre-wrap font-bold text-sm md:text-lg leading-relaxed">{msg.text}</p>
+                  )}
+
+                  {msg.isLoading && (
+                    <div className="flex items-center gap-2 text-orange-500 font-bold">
+                      <span className="text-xl animate-pulse">🍜</span>
+                      <span>至高の一杯を探しているよ...</span>
                     </div>
-                    
-                    {msg.results.db_match.length === 0 && msg.results.web_match.length === 0 && (
-                      <p className="text-yellow-400 mt-2">ごめんなさい、条件に合うお店が見つかりませんでした💦</p>
-                    )}
-                  </div>
-                )}
+                  )}
+
+                  {msg.results && (
+                    <div className="flex flex-col gap-4 mt-2">
+                      <p className="font-extrabold text-orange-600 text-base md:text-lg flex items-center gap-2">
+                        <span className="text-xl">✨</span>
+                        お待たせ！こんなお店はどうかな？
+                      </p>
+                      
+                      <div className="grid grid-cols-1 gap-4">
+                        {msg.results.db_match.map((match, i) => (
+                          <div key={`db-${i}`} className="h-full">
+                            {renderRamenCard(match, "✅ あなたの好みに近いお店（DBより）")}
+                          </div>
+                        ))}
+
+                        {msg.results.web_match.map((match, i) => (
+                          <div key={`web-${i}`} className="h-full">
+                            {renderRamenCard(match, "🌐 ネットで見つけたおすすめのお店")}
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {msg.results.db_match.length === 0 && msg.results.web_match.length === 0 && (
+                        <p className="text-orange-500 font-bold mt-2 bg-orange-50 p-4 rounded-xl">ごめんなさい、条件に合うお店が見つからなかったみたい💦</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+          <div ref={messagesEndRef} className="h-4" />
 
-      {/* 3. 入力フォームエリア (自然なドキュメントフローで極力余白を減らす) */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-2 md:px-6 pt-1 pb-4 mt-auto">
-        <div className="flex items-center gap-2 bg-slate-700/95 border border-orange-400/70 rounded-full p-1 pl-4 shadow-[0_0_15px_rgba(249,115,22,0.4)] backdrop-blur-md focus-within:shadow-[0_0_20px_rgba(249,115,22,0.7)] focus-within:border-orange-400 transition-all">
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={isLoading}
-            placeholder="濃厚な豚骨ラーメンが食べたいな..."
-            className="flex-grow bg-transparent text-slate-100 placeholder-slate-300 focus:outline-none text-sm md:text-base py-1.5"
-          />
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || isLoading}
-            className={`shrink-0 p-2 md:p-3 rounded-full transition-all duration-300 ${
-              inputText.trim() && !isLoading
-                ? "bg-orange-500 text-white shadow-[0_0_12px_rgba(249,115,22,0.8)] hover:bg-orange-400 hover:scale-105"
-                : "bg-slate-600 text-slate-400 cursor-not-allowed"
-            }`}
-          >
-            <Send size={18} className={isLoading ? "animate-pulse" : ""} />
-          </button>
-        </div>
+          {/* 3. 入力フォーム (下部固定を廃止し、チャットフローに右端で続ける) */}
+          <div className="w-full flex justify-end pr-0 md:pr-4 mt-6 pb-20">
+            <div className="flex flex-col items-end w-full max-w-[95%] md:max-w-[50%] lg:max-w-[40%] xl:max-w-[32%]">
+                <div className="w-full bg-gradient-to-tl from-orange-50 to-white border border-slate-200 rounded-3xl rounded-br-sm p-4 md:p-6 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+                    <textarea
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        disabled={isLoading}
+                        placeholder="例：新宿の濃厚な豚骨ラーメンが食べたい！"
+                        className="w-full h-32 md:h-40 bg-white border border-slate-300 rounded-2xl p-4 text-slate-800 text-sm md:text-base focus:outline-none focus:ring-4 focus:ring-orange-300/50 shadow-inner resize-none transition-all"
+                    />
+                    <div className="flex justify-end mt-4">
+                        <button
+                            onClick={handleSend}
+                            disabled={!inputText.trim() || isLoading}
+                            className="bg-orange-500 text-white font-extrabold text-sm md:text-base py-3 px-8 rounded-full hover:bg-orange-600 hover:scale-105 hover:shadow-[0_4px_20px_rgba(249,115,22,0.4)] disabled:bg-slate-300 disabled:hover:scale-100 disabled:shadow-none transition-all duration-300"
+                        >
+                            {isLoading ? '解析中... 💭' : '送信する！'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+          </div>
       </div>
+    
     </div>
   );
 }

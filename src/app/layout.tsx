@@ -23,7 +23,7 @@ export default function RootLayout({
 
         {/* 1. 共通ヘッダー（上部固定） */}
         <header className="fixed top-0 inset-x-0 h-16 bg-slate-900/80 backdrop-blur-md z-50 border-b border-orange-500/30">
-          <div className="max-w-md mx-auto h-full flex items-center justify-around px-4">
+          <div className="max-w-3xl mx-auto h-full flex items-center justify-around px-4">
             <Link href="/" className="p-2 text-slate-300 hover:text-orange-400 hover:shadow-[0_0_10px_rgba(249,115,22,0.8)] rounded-full transition-all duration-300">
               <Home size={26} />
             </Link>
@@ -39,8 +39,8 @@ export default function RootLayout({
           </div>
         </header>
 
-        {/* メインコンテンツエリア: max-w-md, mx-auto でスマホアプリ風の中央配置カラム */}
-        <main className="pt-20 pb-10 max-w-md mx-auto min-h-screen flex flex-col">
+        {/* メインコンテンツエリア: max-w-7xl で幅広のPCレイアウト */}
+        <main className="pt-20 pb-10 max-w-7xl w-full mx-auto min-h-screen flex flex-col items-center">
           {children}
         </main>
       </body>
